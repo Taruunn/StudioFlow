@@ -5,7 +5,6 @@ import Pica from 'pica';
 // Constants for the fixed portrait canvas
 const CANVAS_WIDTH = 1200;
 const CANVAS_HEIGHT = 1800;
-const DISPLAY_RATIO = 0.4; // Slightly larger preview
 const DEFAULT_ZOOM = 0.25;  // 25% default magnification
 
 // Initialize pica for high-quality image processing
@@ -21,11 +20,29 @@ export default function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [displaySize, setDisplaySize] = useState({ width: 420, height: 630 });
 
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const currentImage = images[currentIndex];
+
+  // Calculate responsive canvas display size
+  useEffect(() => {
+    const updateSize = () => {
+      // Available height = viewport - header(40px) - controls(80px) - gaps(100px)
+      const availableHeight = window.innerHeight - 220;
+      const maxHeight = Math.min(availableHeight, 720);
+      const ratio = maxHeight / CANVAS_HEIGHT;
+      setDisplaySize({
+        width: Math.round(CANVAS_WIDTH * ratio),
+        height: Math.round(CANVAS_HEIGHT * ratio)
+      });
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
 
   // Reset transforms whenever the image in the queue changes
   useEffect(() => {
@@ -322,8 +339,8 @@ export default function App() {
             <div
               className="relative shadow-2xl shadow-black/50 rounded-lg overflow-hidden cursor-move bg-white"
               style={{
-                width: CANVAS_WIDTH * DISPLAY_RATIO,
-                height: CANVAS_HEIGHT * DISPLAY_RATIO,
+                width: displaySize.width,
+                height: displaySize.height,
               }}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
